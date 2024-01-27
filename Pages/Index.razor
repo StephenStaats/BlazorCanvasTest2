@@ -36,21 +36,21 @@
 
     private DateTime LastRender;
 
-    public float YScaleFactor = 0.15f;
+    private float YScaleFactor = 0.15f;
 
-    public int InitializeDrawEraseBar = 1;
-    public int StartingSampleIndex = 0;
+    private int InitializeDrawEraseBar = 1;
+    private int StartingSampleIndex = 0;
 
-    public int EraseBarWidth = 10;
+    private int EraseBarWidth = 10;
 
-    public float HeaderHeight = 150;
+    private float HeaderHeight = 120;
 
-    public float DrawX = 0;
-    public float EraseX = 10;
-    public float DrawY = 300;
+    private float DrawX = 0;
+    private float EraseX = 10;
+    private float DrawY = 300;
 
-    public float XOffset = 0;
-    public float YOffset = 300;
+    private float XOffset = 0;
+    private float YOffset = 300;
 
 
     [JSInvokable]
@@ -99,7 +99,7 @@
         await this.ctx.FillTextAsync($"SecondsPerFrame: {SecondsPerFrame:0.000}", 10, 50);
         await this.ctx.FillTextAsync($"SecondsPerSample: {SecondsPerSample:0.000}", 10, 70);
         await this.ctx.FillTextAsync($"SamplesPerFrame: {SamplesPerFrame:0.000}", 10, 90);
-        await this.ctx.FillTextAsync($"IntSamplesPerFrame: {IntSamplesPerFrame:0}", 10, 110);
+        //await this.ctx.FillTextAsync($"IntSamplesPerFrame: {IntSamplesPerFrame:0}", 10, 110);
 
         await this.ctx.EndBatchAsync();
 

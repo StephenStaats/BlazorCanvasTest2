@@ -16,4 +16,8 @@ https://docs.microsoft.com/en-us/aspnet/core/migration/31-to-50?view=aspnetcore-
     <PackageReference Include="System.Net.Http.Json" Version="5.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Shared\Data\" />
+  </ItemGroup>
+
 </Project>

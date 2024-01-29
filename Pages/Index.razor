@@ -10,38 +10,42 @@
 
 @code{
 
+    //using BlazorCanvasTest2.Shared.Data;
+
+    //private static Enums.Z_WAVEFORM_ID WaveformID ;
 
     private Models.HomeScreen HomeScreen = new Models.HomeScreen();
+    //private Models.Waveform[] Waveforms = new Models.Waveform[] { new(WaveformID, 0, 0, 10, 10, "ffffff") };
+
 
     private Canvas2DContext ctx;
     protected BECanvasComponent _canvasReference;
 
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        this.ctx = await _canvasReference.CreateCanvas2DAsync();
-        await JsRuntime.InvokeAsync<object>("initRenderJS", DotNetObjectReference.Create(this));
-        await base.OnInitializedAsync();
+    this.ctx = await _canvasReference.CreateCanvas2DAsync();
+    await JsRuntime.InvokeAsync<object>("initRenderJS", DotNetObjectReference.Create(this));
+    await base.OnInitializedAsync();
     }
 
 
     [JSInvokable]
     public void ResizeInBlazor(double width, double height)
     {
-        //HomeScreen.Resize(width, height);
+    //HomeScreen.Resize(width, height);
 
-        // #define SCREEN_W                        1366   // DSW10 display X resolution
-        // #define SCREEN_H                         768   // DSW10 display Y resolution
-        HomeScreen.Resize(1366, 768);
-        InitializeDrawEraseBar = 1;
+    // #define SCREEN_W                        1366   // DSW10 display X resolution
+    // #define SCREEN_H                         768   // DSW10 display Y resolution
+    HomeScreen.Resize(1366, 768);
+    RedrawHomeScreen = 1;
     }
 
 
 
     private DateTime LastRender;
 
-    private float YScaleFactor = 0.15f;
-
-    private int InitializeDrawEraseBar = 1;
+    private int RedrawHomeScreen = 1;
     private int StartingSampleIndex = 0;
 
     private int EraseBarWidth = 10;
@@ -51,1497 +55,459 @@
     private double DrawX = 0;
     private double EraseX = 10;
     private double DrawY = 300;
+    private double YScaleFactor;
+    private int SampleIndex;
 
-    private double XOffset = 0;
-    private double YOffset = 0;
+    // private double XOffset = 0;
+    // private double YOffset = 0;
 
 
     [JSInvokable]
     public async ValueTask RenderInBlazor(float timeStamp)
     {
-        await DrawEraseBar(timeStamp);
-        //await DrawMovingPaper(timeStamp);
+    await DrawEraseBar(timeStamp);
+    //await DrawMovingPaper(timeStamp);
     }
 
 
     public async ValueTask DrawEraseBar(float timeStamp)
     {
 
-        double fps = 1.0 / (DateTime.Now - LastRender).TotalSeconds;
-        LastRender = DateTime.Now;
-        double SecondsPerFrame = 1.0;
-        if (fps != 0)
-        {
-            SecondsPerFrame = 1.0 / fps;  // seconds per frame
-        }
+    double fps = 1.0 / (DateTime.Now - LastRender).TotalSeconds;
+    LastRender = DateTime.Now;
+    double SecondsPerFrame = 1.0;
+    if (fps != 0)
+    {
+    SecondsPerFrame = 1.0 / fps;  // seconds per frame
+    }
 
-        double SampleFrequency = 250;
+    double SampleFrequency = 250;
 
-        double SecondsPerSample = 1.0 / SampleFrequency;
+    double SecondsPerSample = 1.0 / SampleFrequency;
 
-        double SamplesPerFrame = SecondsPerFrame / SecondsPerSample;
-        int IntSamplesPerFrame = (int)SamplesPerFrame;
+    double SamplesPerFrame = SecondsPerFrame / SecondsPerSample;
+    int IntSamplesPerFrame = (int)SamplesPerFrame;
 
-        double[] CO2Samples;
-        double[] ECGIISamples;
+    // double[] CO2Samples;
+    // double[] ECGIISamples;
 
-        BlazorCanvasTest2.Shared.Data.SampleData sampleData = new BlazorCanvasTest2.Shared.Data.SampleData();
-        // ECGISamples = sampleData.GetECGISamples();
-        ECGIISamples = sampleData.GetECGIISamples();
-        // ECGVSamples = sampleData.GetECGVSamples();
-        // SpO2Samples = sampleData.GetSpO2Samples();
-        CO2Samples = sampleData.GetCO2Samples();
+    // BlazorCanvasTest2.Shared.Data.SampleData sampleData = new BlazorCanvasTest2.Shared.Data.SampleData();
+    // // ECGISamples = sampleData.GetECGISamples();
+    // ECGIISamples = sampleData.GetECGIISamples();
+    // // ECGVSamples = sampleData.GetECGVSamples();
+    // // SpO2Samples = sampleData.GetSpO2Samples();
+    // CO2Samples = sampleData.GetCO2Samples();
 
-        int MaxIndexECGII = ECGIISamples.Count();
-        int MaxIndexCO2 = CO2Samples.Count();
+    // int MaxIndexECGII = ECGIISamples.Count();
+    // int MaxIndexCO2 = CO2Samples.Count();
 
-        // 
-        //   Define home screen areas
-        //
+    // 
+    //   Define home screen areas
+    //
 
-        HomeScreen.HeaderWidth = HomeScreen.Width;
-        HomeScreen.HeaderHeight = HomeScreen.Height * 15 / 100 ;
-        HomeScreen.HeaderLeft = 0;
-        HomeScreen.HeaderRight = HomeScreen.HeaderLeft + HomeScreen.HeaderWidth ;
-        HomeScreen.HeaderTop = 0;
-        HomeScreen.HeaderBottom = HomeScreen.HeaderTop + HomeScreen.HeaderHeight ;
+    HomeScreen.HeaderWidth = HomeScreen.Width;
+    HomeScreen.HeaderHeight = HomeScreen.Height * 15 / 100;
+    HomeScreen.HeaderLeft = 0;
+    HomeScreen.HeaderRight = HomeScreen.HeaderLeft + HomeScreen.HeaderWidth;
+    HomeScreen.HeaderTop = 0;
+    HomeScreen.HeaderBottom = HomeScreen.HeaderTop + HomeScreen.HeaderHeight;
 
-        HomeScreen.WaveformAreaWidth = HomeScreen.Width * 80 / 100 ;
-        HomeScreen.WaveformAreaHeight = HomeScreen.Height * 65 / 100;
-        HomeScreen.WaveformAreaLeft = 0;
-        HomeScreen.WaveformAreaRight = HomeScreen.WaveformAreaLeft + HomeScreen.WaveformAreaWidth;
-        HomeScreen.WaveformAreaTop = HomeScreen.HeaderBottom;
-        HomeScreen.WaveformAreaBottom = HomeScreen.WaveformAreaTop + HomeScreen.WaveformAreaHeight;
+    HomeScreen.WaveformAreaWidth = HomeScreen.Width * 80 / 100;
+    HomeScreen.WaveformAreaHeight = HomeScreen.Height * 65 / 100;
+    HomeScreen.WaveformAreaLeft = 0;
+    HomeScreen.WaveformAreaRight = HomeScreen.WaveformAreaLeft + HomeScreen.WaveformAreaWidth;
+    HomeScreen.WaveformAreaTop = HomeScreen.HeaderBottom;
+    HomeScreen.WaveformAreaBottom = HomeScreen.WaveformAreaTop + HomeScreen.WaveformAreaHeight;
 
-        HomeScreen.RightParamAreaWidth = HomeScreen.Width * 20 / 100;
-        HomeScreen.RightParamAreaHeight = HomeScreen.Height * 65 / 100;
-        HomeScreen.RightParamAreaLeft = HomeScreen.WaveformAreaRight;
-        HomeScreen.RightParamAreaRight = HomeScreen.RightParamAreaLeft + HomeScreen.RightParamAreaWidth;
-        HomeScreen.RightParamAreaTop = HomeScreen.HeaderBottom;
-        HomeScreen.RightParamAreaBottom = HomeScreen.RightParamAreaTop + HomeScreen.RightParamAreaHeight;
+    HomeScreen.RightParamAreaWidth = HomeScreen.Width * 20 / 100;
+    HomeScreen.RightParamAreaHeight = HomeScreen.Height * 65 / 100;
+    HomeScreen.RightParamAreaLeft = HomeScreen.WaveformAreaRight;
+    HomeScreen.RightParamAreaRight = HomeScreen.RightParamAreaLeft + HomeScreen.RightParamAreaWidth;
+    HomeScreen.RightParamAreaTop = HomeScreen.HeaderBottom;
+    HomeScreen.RightParamAreaBottom = HomeScreen.RightParamAreaTop + HomeScreen.RightParamAreaHeight;
 
-        HomeScreen.BottomParamAreaWidth = HomeScreen.Width ;
-        HomeScreen.BottomParamAreaHeight = HomeScreen.Height * 10 / 100;
-        HomeScreen.BottomParamAreaLeft = 0;
-        HomeScreen.BottomParamAreaRight = HomeScreen.BottomParamAreaLeft + HomeScreen.BottomParamAreaWidth;
-        HomeScreen.BottomParamAreaTop = HomeScreen.WaveformAreaBottom;
-        HomeScreen.BottomParamAreaBottom = HomeScreen.BottomParamAreaTop + HomeScreen.BottomParamAreaHeight;
+    HomeScreen.BottomParamAreaWidth = HomeScreen.Width;
+    HomeScreen.BottomParamAreaHeight = HomeScreen.Height * 10 / 100;
+    HomeScreen.BottomParamAreaLeft = 0;
+    HomeScreen.BottomParamAreaRight = HomeScreen.BottomParamAreaLeft + HomeScreen.BottomParamAreaWidth;
+    HomeScreen.BottomParamAreaTop = HomeScreen.WaveformAreaBottom;
+    HomeScreen.BottomParamAreaBottom = HomeScreen.BottomParamAreaTop + HomeScreen.BottomParamAreaHeight;
 
-        HomeScreen.MessageAreaWidth = HomeScreen.Width ;
-        HomeScreen.MessageAreaHeight = HomeScreen.Height * 10 / 100;
-        HomeScreen.MessageAreaLeft = 0;
-        HomeScreen.MessageAreaRight = HomeScreen.MessageAreaLeft + HomeScreen.MessageAreaWidth;
-        HomeScreen.MessageAreaTop = HomeScreen.BottomParamAreaBottom;
-        HomeScreen.MessageAreaBottom = HomeScreen.MessageAreaTop + HomeScreen.MessageAreaHeight;
+    HomeScreen.MessageAreaWidth = HomeScreen.Width;
+    HomeScreen.MessageAreaHeight = HomeScreen.Height * 10 / 100;
+    HomeScreen.MessageAreaLeft = 0;
+    HomeScreen.MessageAreaRight = HomeScreen.MessageAreaLeft + HomeScreen.MessageAreaWidth;
+    HomeScreen.MessageAreaTop = HomeScreen.BottomParamAreaBottom;
+    HomeScreen.MessageAreaBottom = HomeScreen.MessageAreaTop + HomeScreen.MessageAreaHeight;
 
-        XOffset = HomeScreen.WaveformAreaLeft;
-        YOffset = HomeScreen.WaveformAreaTop + HomeScreen.WaveformAreaHeight / 4 ;
-
-        double X = XOffset;
-        double Y = YOffset;
-
-        //
-        //   Draw header information
-        //
-
-        await this.ctx.BeginBatchAsync();
-
-        await this.ctx.ClearRectAsync(HomeScreen.HeaderLeft, HomeScreen.HeaderTop, HomeScreen.HeaderWidth, HomeScreen.HeaderHeight);
-        await this.ctx.SetFillStyleAsync("#333333");
-        await this.ctx.FillRectAsync(HomeScreen.HeaderLeft, HomeScreen.HeaderTop, HomeScreen.HeaderWidth, HomeScreen.HeaderHeight);
-
-        await this.ctx.SetFillStyleAsync("#FFFFFF");
-        await this.ctx.SetFontAsync("16px consolas");
-        await this.ctx.FillTextAsync($"FPS: {fps:0.000}", 10, 30);
-        await this.ctx.FillTextAsync($"SecondsPerFrame: {SecondsPerFrame:0.000}", 10, 50);
-        await this.ctx.FillTextAsync($"SecondsPerSample: {SecondsPerSample:0.000}", 10, 70);
-        await this.ctx.FillTextAsync($"SamplesPerFrame: {SamplesPerFrame:0.000}", 10, 90);
-
-        await this.ctx.EndBatchAsync();
+    //
+    //   Draw header information
+    //
 
 
-        //
-        //   If initializing, redraw the home screen 
-        //
+    //return ;
 
-        if (InitializeDrawEraseBar == 1)
-        {
-            InitializeDrawEraseBar = 0;
+    //
+    //   If initializing, redraw the home screen 
+    //
 
-            await this.ctx.BeginBatchAsync();
+    Enums.Z_WAVEFORM_ID[] WaveformSet = { Enums.Z_WAVEFORM_ID.Z_WAVEFORM_ECGII, Enums.Z_WAVEFORM_ID.Z_WAVEFORM_CO2 };
+    string[] WaveformColors = { "#00FF00", "#FFFF00" };
 
-            await this.ctx.SetFillStyleAsync("#000000");
-            await this.ctx.ClearRectAsync(HomeScreen.WaveformAreaLeft, HomeScreen.WaveformAreaTop, HomeScreen.WaveformAreaWidth, HomeScreen.WaveformAreaHeight);
-            await this.ctx.FillRectAsync(HomeScreen.WaveformAreaLeft, HomeScreen.WaveformAreaTop, HomeScreen.WaveformAreaWidth, HomeScreen.WaveformAreaHeight);
+    if (RedrawHomeScreen == 1)
+    {
+    RedrawHomeScreen = 0;
 
-            await this.ctx.SetFillStyleAsync("#ff0000");
-            await this.ctx.ClearRectAsync(HomeScreen.RightParamAreaLeft, HomeScreen.RightParamAreaTop, HomeScreen.RightParamAreaWidth, HomeScreen.RightParamAreaHeight);
-            await this.ctx.FillRectAsync(HomeScreen.RightParamAreaLeft, HomeScreen.RightParamAreaTop, HomeScreen.RightParamAreaWidth, HomeScreen.RightParamAreaHeight);
+    await this.ctx.BeginBatchAsync();
 
-            await this.ctx.SetFillStyleAsync("#ffff00");
-            await this.ctx.ClearRectAsync(HomeScreen.BottomParamAreaLeft, HomeScreen.BottomParamAreaTop, HomeScreen.BottomParamAreaWidth, HomeScreen.BottomParamAreaHeight);
-            await this.ctx.FillRectAsync(HomeScreen.BottomParamAreaLeft, HomeScreen.BottomParamAreaTop, HomeScreen.BottomParamAreaWidth, HomeScreen.BottomParamAreaHeight);
+    await this.ctx.SetFillStyleAsync("#000000");
+    await this.ctx.ClearRectAsync(HomeScreen.WaveformAreaLeft, HomeScreen.WaveformAreaTop, HomeScreen.WaveformAreaWidth, HomeScreen.WaveformAreaHeight);
+    await this.ctx.FillRectAsync(HomeScreen.WaveformAreaLeft, HomeScreen.WaveformAreaTop, HomeScreen.WaveformAreaWidth, HomeScreen.WaveformAreaHeight);
 
-            await this.ctx.SetFillStyleAsync("#555555");
-            await this.ctx.ClearRectAsync(HomeScreen.MessageAreaLeft, HomeScreen.MessageAreaTop, HomeScreen.MessageAreaWidth, HomeScreen.MessageAreaHeight);
-            await this.ctx.FillRectAsync(HomeScreen.MessageAreaLeft, HomeScreen.MessageAreaTop, HomeScreen.MessageAreaWidth, HomeScreen.MessageAreaHeight);
+    await this.ctx.SetFillStyleAsync("#ff0000");
+    await this.ctx.ClearRectAsync(HomeScreen.RightParamAreaLeft, HomeScreen.RightParamAreaTop, HomeScreen.RightParamAreaWidth, HomeScreen.RightParamAreaHeight);
+    await this.ctx.FillRectAsync(HomeScreen.RightParamAreaLeft, HomeScreen.RightParamAreaTop, HomeScreen.RightParamAreaWidth, HomeScreen.RightParamAreaHeight);
+
+    await this.ctx.SetFillStyleAsync("#ff5555");
+    await this.ctx.ClearRectAsync(HomeScreen.BottomParamAreaLeft, HomeScreen.BottomParamAreaTop, HomeScreen.BottomParamAreaWidth, HomeScreen.BottomParamAreaHeight);
+    await this.ctx.FillRectAsync(HomeScreen.BottomParamAreaLeft, HomeScreen.BottomParamAreaTop, HomeScreen.BottomParamAreaWidth, HomeScreen.BottomParamAreaHeight);
+
+    await this.ctx.SetFillStyleAsync("#555555");
+    await this.ctx.ClearRectAsync(HomeScreen.MessageAreaLeft, HomeScreen.MessageAreaTop, HomeScreen.MessageAreaWidth, HomeScreen.MessageAreaHeight);
+    await this.ctx.FillRectAsync(HomeScreen.MessageAreaLeft, HomeScreen.MessageAreaTop, HomeScreen.MessageAreaWidth, HomeScreen.MessageAreaHeight);
+
+    // for (int w = 0; w < WaveformSet.Count(); w++) {
+    //     await this.ctx.SetFillStyleAsync(HomeScreen.Waveforms[w].Color);
+    //     await this.ctx.ClearRectAsync(HomeScreen.Waveforms[w].Left, HomeScreen.Waveforms[w].Top, HomeScreen.Waveforms[w].Width, HomeScreen.Waveforms[w].Height);
+    //     await this.ctx.FillRectAsync(HomeScreen.Waveforms[w].Left, HomeScreen.Waveforms[w].Top, HomeScreen.Waveforms[w].Width, HomeScreen.Waveforms[w].Height);
+    // }
 
 
-            await this.ctx.BeginPathAsync();
-            await this.ctx.SetStrokeStyleAsync("#00FF00");
-            await this.ctx.SetLineWidthAsync(2);
+    //
+    //  Add home screen waveforms
+    //
 
-            DrawX = HomeScreen.WaveformAreaLeft;
-            EraseX = DrawX + EraseBarWidth;
-            DrawY = HomeScreen.WaveformAreaTop + HomeScreen.WaveformAreaHeight / 2 ;
+    HomeScreen.ClearWaveformList();
 
-            int ECGIISamplesIndex = StartingSampleIndex;
+    DrawX = HomeScreen.WaveformAreaLeft;
+    EraseX = DrawX + EraseBarWidth;
+    YScaleFactor = 0.15;
+    SampleIndex = 0;
 
-            for (int i = 0; i < HomeScreen.WaveformAreaWidth; i++)
-            {
+    double WaveformHeight = HomeScreen.WaveformAreaHeight / WaveformSet.Count();
 
-                //for (int s = 0; s < SamplesToAddPerScreenUpdate; s++) {
+    for (int w = 0; w < WaveformSet.Count(); w++)
+    {
+    DrawY = HomeScreen.WaveformAreaTop + w * WaveformHeight + WaveformHeight / 2;
 
-                Y = YOffset - ECGIISamples[ECGIISamplesIndex] * YScaleFactor;
+    bool AutoScale = true;
 
-                await this.ctx.LineToAsync(X, Y);
+    HomeScreen.AddWaveform(WaveformSet[w], 
+                           HomeScreen.WaveformAreaLeft, 
+                           HomeScreen.WaveformAreaTop + w * WaveformHeight, 
+                           HomeScreen.WaveformAreaWidth, 
+                           WaveformHeight, 
+                           WaveformColors[w],
+                           DrawX, 
+                           EraseX,
+                           DrawY,
+                           AutoScale,
+                           0,
+                           0,
+                           YScaleFactor,
+                           SampleIndex
+    );
 
-                X += 1;
-                ECGIISamplesIndex += 1;
-                if (ECGIISamplesIndex >= MaxIndexECGII)
-                {
-                    ECGIISamplesIndex = 0;
+    }
+
+    await this.ctx.EndBatchAsync();
+
+    //return ;
+
+    //
+    //   Redraw all waveforms
+    //
+
+    for (int w = 0; w < WaveformSet.Count(); w++)
+    {
+
+    await this.ctx.BeginBatchAsync();
+
+    await this.ctx.BeginPathAsync();
+
+    await this.ctx.SetLineWidthAsync(2);
+
+    await this.ctx.SetStrokeStyleAsync(HomeScreen.Waveforms[w].Color);
+
+    double reDrawX = HomeScreen.Waveforms[w].DrawX;
+    double reEraseX = HomeScreen.Waveforms[w].EraseX;
+    double reDrawY = HomeScreen.Waveforms[w].DrawY;
+
+    int SamplesIndex = HomeScreen.Waveforms[w].SampleIndex;
+
+    double SampleMin = HomeScreen.Waveforms[w].YMin;
+    double SampleRange = HomeScreen.Waveforms[w].Range;
+    double Bottom = HomeScreen.Waveforms[w].Bottom;
+    double Height = HomeScreen.Waveforms[w].Height ;
+
+    for (int i = 0; i < HomeScreen.Waveforms[w].Width; i++)
+    {
+
+    double SampleY = HomeScreen.Waveforms[w].Samples[SamplesIndex] ;
+    reDrawY = Bottom - (SampleY - SampleMin) / SampleRange * Height;
+
+    await this.ctx.LineToAsync(reDrawX, reDrawY);
+
+    reDrawX += 1;
+    SamplesIndex += 1;
+    if (SamplesIndex >= HomeScreen.Waveforms[w].MaxSampleIndex)
+    {
+    SamplesIndex = 0;
+    }
+
+    }
+
+    await this.ctx.StrokeAsync();
+
+    await this.ctx.EndBatchAsync();
+
+    }
+
+    }
+    else
+    {
+
+    //
+    //   Draw moving erase bar
+    //
+
+    await this.ctx.BeginBatchAsync();
+
+    await this.ctx.BeginPathAsync();
+
+    await this.ctx.SetLineWidthAsync(2);
+    await this.ctx.SetStrokeStyleAsync("#000000");
+    await this.ctx.SetFillStyleAsync("#000000");
+
+    for (int w = 0; w < WaveformSet.Count(); w++) {
+
+    for (int i = 0; i < IntSamplesPerFrame; i++)
+    {
+    await this.ctx.MoveToAsync(HomeScreen.Waveforms[w].EraseX, HomeScreen.Waveforms[w].Top);
+    await this.ctx.LineToAsync(HomeScreen.Waveforms[w].EraseX, HomeScreen.Waveforms[w].Bottom);
+
+    HomeScreen.Waveforms[w].EraseX += 1;
+    if (HomeScreen.Waveforms[w].EraseX >= HomeScreen.Waveforms[w].Right) {
+    HomeScreen.Waveforms[w].EraseX = HomeScreen.Waveforms[w].Left;
+    }
+
+    }
+
+    }
+
+    await this.ctx.StrokeAsync();
+
+    await this.ctx.EndBatchAsync();
+
+    //return ;
+
+    //
+    //   Fill in newest waveform samples
+    //
+
+
+    for (int w = 0; w < WaveformSet.Count(); w++) {
+
+    await this.ctx.BeginBatchAsync();
+
+    await this.ctx.BeginPathAsync();
+
+    await this.ctx.SetLineWidthAsync(2.0f);
+
+    await this.ctx.SetStrokeStyleAsync(HomeScreen.Waveforms[w].Color);
+    await this.ctx.SetFillStyleAsync(HomeScreen.Waveforms[w].Color);
+
+    double SampleMin = HomeScreen.Waveforms[w].YMin;
+    double SampleRange = HomeScreen.Waveforms[w].Range;
+    double Bottom = HomeScreen.Waveforms[w].Bottom;
+    double Height = HomeScreen.Waveforms[w].Height;
+
+    await this.ctx.MoveToAsync(HomeScreen.Waveforms[w].DrawX, HomeScreen.Waveforms[w].DrawY);
+
+    for (int i = 0; i < IntSamplesPerFrame; i++)
+    {
+
+    HomeScreen.Waveforms[w].DrawX += 1;
+    if (HomeScreen.Waveforms[w].DrawX >= HomeScreen.Waveforms[w].Width)
+    {
+    HomeScreen.Waveforms[w].DrawX = HomeScreen.Waveforms[w].Left;
+    await this.ctx.MoveToAsync(HomeScreen.Waveforms[w].DrawX, HomeScreen.Waveforms[w].DrawY);
+    }
+
+    double SampleY = HomeScreen.Waveforms[w].Samples[HomeScreen.Waveforms[w].SampleIndex];
+    HomeScreen.Waveforms[w].DrawY = Bottom - (SampleY - SampleMin) / SampleRange * Height;
+
+    await this.ctx.LineToAsync(HomeScreen.Waveforms[w].DrawX, HomeScreen.Waveforms[w].DrawY);
+    if (w == 1)
+    {
+    await this.ctx.LineToAsync(HomeScreen.Waveforms[w].DrawX, HomeScreen.Waveforms[w].Bottom);
+    await this.ctx.MoveToAsync(HomeScreen.Waveforms[w].DrawX, HomeScreen.Waveforms[w].DrawY);
+    }
+
+    HomeScreen.Waveforms[w].SampleIndex += 1;
+                    if (HomeScreen.Waveforms[w].SampleIndex >= HomeScreen.Waveforms[w].MaxSampleIndex)
+                    {
+                        HomeScreen.Waveforms[w].SampleIndex = 0;
+                    }
+
+
                 }
 
-                //}
+                await this.ctx.StrokeAsync();
+
+                await this.ctx.EndBatchAsync();
 
             }
 
 
 
-            StartingSampleIndex = (StartingSampleIndex + 1) % MaxIndexECGII;
-            //StartingSampleIndex = (StartingSampleIndex + IntSamplesPerFrame) % MaxIndex;
-            //StartingSampleIndex = (StartingSampleIndex + ((int)SamplesPerFrame)) % MaxIndex;
-            //StartingSampleIndex = (int)(SamplesPerFrame) % MaxIndex ;
-            // if (StartingSampleIndex >= MaxIndex)
-            // {
-            //     StartingSampleIndex = 0;
-            // }
-
-            await this.ctx.StrokeAsync();
-
-            await this.ctx.EndBatchAsync();
-
-        }
-        else
-        {
-
             //
-            //   Draw moving erase bar
+            //   Draw header information
             //
 
             await this.ctx.BeginBatchAsync();
 
-            await this.ctx.BeginPathAsync();
+            await this.ctx.ClearRectAsync(HomeScreen.HeaderLeft, HomeScreen.HeaderTop, HomeScreen.HeaderWidth, HomeScreen.HeaderHeight);
+            await this.ctx.SetFillStyleAsync("#333333");
+            await this.ctx.FillRectAsync(HomeScreen.HeaderLeft, HomeScreen.HeaderTop, HomeScreen.HeaderWidth, HomeScreen.HeaderHeight);
+            await this.ctx.SetFillStyleAsync("#FFFFFF");
+            await this.ctx.SetFontAsync("16px consolas");
 
-            await this.ctx.SetLineWidthAsync(2);
-            await this.ctx.SetStrokeStyleAsync("#000000");
-            await this.ctx.SetFillStyleAsync("#000000");
+            await this.ctx.FillTextAsync($"FPS: {fps:0.000}", 10, 30);
+            await this.ctx.FillTextAsync($"SecondsPerFrame: {SecondsPerFrame:0.000}", 10, 50);
+            await this.ctx.FillTextAsync($"SecondsPerSample: {SecondsPerSample:0.000}", 10, 70);
+            await this.ctx.FillTextAsync($"SamplesPerFrame: {SamplesPerFrame:0.000}", 10, 90);
 
-            //for (int i = 0; i < EraseBarWidth; i++)
-            for (int i = 0; i < IntSamplesPerFrame; i++)
-            {
-                await this.ctx.MoveToAsync(EraseX, HomeScreen.WaveformAreaTop);
-                await this.ctx.LineToAsync(EraseX, HomeScreen.WaveformAreaBottom);
+            // await this.ctx.FillTextAsync($"Count: {WaveformSet.Count():0}", 10, 30);
+            // await this.ctx.FillTextAsync($"DrawX 0: {HomeScreen.Waveforms[0].DrawX:0.000}  DrawX 1: {HomeScreen.Waveforms[1].DrawX:0.000}", 10, 50);
+            // await this.ctx.FillTextAsync($"EraseX 0: {HomeScreen.Waveforms[0].EraseX:0.000}  EraseX 1: {HomeScreen.Waveforms[1].EraseX:0.000}", 10, 70);
+            // await this.ctx.FillTextAsync($"DrawY 0: {HomeScreen.Waveforms[0].DrawY:0.000}  DrawY 1: {HomeScreen.Waveforms[1].DrawY:0.000}", 10, 90);
 
-                EraseX += 1;
-                if (EraseX >= HomeScreen.WaveformAreaRight)
-                {
-                    EraseX = HomeScreen.WaveformAreaLeft;
-                }
+            // await this.ctx.FillTextAsync($"SampleIndex 0: {HomeScreen.Waveforms[0].SampleIndex:0.000}  SampleIndex 1: {HomeScreen.Waveforms[1].SampleIndex:0.000}", 10, 30);
+            // await this.ctx.FillTextAsync($"Width 0: {HomeScreen.Waveforms[0].Width:0.000}  Width 1: {HomeScreen.Waveforms[1].Width:0.000}", 10, 50);
+            // await this.ctx.FillTextAsync($"YOffset 0: {HomeScreen.Waveforms[0].YOffset:0.000}  YOffset 1: {HomeScreen.Waveforms[1].YOffset:0.000}", 10, 70);
+            // await this.ctx.FillTextAsync($"MaxSampleIndex 0: {HomeScreen.Waveforms[0].MaxSampleIndex:0.000}  MaxSampleIndex 1: {HomeScreen.Waveforms[1].MaxSampleIndex:0.000}", 10, 90);
 
-            }
-
-            await this.ctx.StrokeAsync();
-
-            await this.ctx.EndBatchAsync();
-
-            //
-            //   Fill in newest waveform samples
-            //
-
-            await this.ctx.BeginBatchAsync();
-
-            await this.ctx.BeginPathAsync();
-
-            await this.ctx.SetLineWidthAsync(2.0f);
-            await this.ctx.SetStrokeStyleAsync("#00ff00");
-            await this.ctx.SetFillStyleAsync("#00ff00");
-
-            int ECGIISamplesIndex = StartingSampleIndex;
-
-            await this.ctx.MoveToAsync(DrawX, DrawY);
-
-            //for (int i = 0; i < EraseBarWidth; i++)
-            for (int i = 0; i < IntSamplesPerFrame; i++)
-            {
-
-                DrawX += 1;
-                if (DrawX >= HomeScreen.WaveformAreaWidth)
-                {
-                    DrawX = HomeScreen.WaveformAreaLeft;
-                    await this.ctx.MoveToAsync(DrawX, DrawY);
-                }
-
-                DrawY = YOffset - ECGIISamples[ECGIISamplesIndex] * YScaleFactor;
-
-                await this.ctx.LineToAsync(DrawX, DrawY);
-
-                ECGIISamplesIndex += 1;
-                if (ECGIISamplesIndex >= MaxIndexECGII)
-                {
-                    ECGIISamplesIndex = 0;
-                }
-
-            }
-
-            await this.ctx.StrokeAsync();
+            // await this.ctx.FillTextAsync($"YMin 0: {HomeScreen.Waveforms[0].YMin:0.000}  YMin 1: {HomeScreen.Waveforms[1].YMin:0.000}", 10, 30);
+            // await this.ctx.FillTextAsync($"YMax 0: {HomeScreen.Waveforms[0].YMax:0.000}  YMax 1: {HomeScreen.Waveforms[1].YMax:0.000}", 10, 50);
+            // await this.ctx.FillTextAsync($"Range 0: {HomeScreen.Waveforms[0].Range:0.000}  Range 1: {HomeScreen.Waveforms[1].Range:0.000}", 10, 70);
 
             await this.ctx.EndBatchAsync();
 
             //StartingSampleIndex = (StartingSampleIndex + EraseBarWidth) % MaxIndex;
-            StartingSampleIndex = (StartingSampleIndex + IntSamplesPerFrame) % MaxIndexECGII;
+            //StartingSampleIndex = (StartingSampleIndex + IntSamplesPerFrame) % MaxIndexECGII;
+
 
         }
 
     }
 
 
+    // public async ValueTask DrawMovingPaper(float timeStamp)
+    // {
 
-    public async ValueTask DrawMovingPaper(float timeStamp)
-    {
+    //     double fps = 1.0 / (DateTime.Now - LastRender).TotalSeconds;
+    //     LastRender = DateTime.Now;
+    //     double SecondsPerFrame = 1.0;
+    //     if (fps != 0)
+    //     {
+    //         SecondsPerFrame = 1.0 / fps;  // seconds per frame
+    //     }
 
-        double fps = 1.0 / (DateTime.Now - LastRender).TotalSeconds;
-        LastRender = DateTime.Now;
-        double SecondsPerFrame = 1.0;
-        if (fps != 0)
-        {
-            SecondsPerFrame = 1.0 / fps;  // seconds per frame
-        }
+    //     double SampleFrequency = 250;
+    //     double SecondsPerSample = 1.0 / SampleFrequency;
 
-        double SampleFrequency = 250;
-        double SecondsPerSample = 1.0 / SampleFrequency;
+    //     double SamplesPerFrame = SecondsPerFrame / SecondsPerSample;
+    //     int IntSamplesPerFrame = (int)SamplesPerFrame;
 
-        double SamplesPerFrame = SecondsPerFrame / SecondsPerSample;
-        int IntSamplesPerFrame = (int)SamplesPerFrame;
+    //     double[] ECGIISamples;
+    //     double[] CO2Samples;
 
-        double[] ECGIISamples;
-        double[] CO2Samples;
+    //     BlazorCanvasTest2.Shared.Data.SampleData sampleData = new BlazorCanvasTest2.Shared.Data.SampleData();
+    //     // ECGISamples = sampleData.GetECGISamples();
+    //     ECGIISamples = sampleData.GetECGIISamples();
+    //     // ECGVSamples = sampleData.GetECGVSamples();
+    //     // SpO2Samples = sampleData.GetSpO2Samples();
+    //     CO2Samples = sampleData.GetCO2Samples();
 
-        BlazorCanvasTest2.Shared.Data.SampleData sampleData = new BlazorCanvasTest2.Shared.Data.SampleData();
-        // ECGISamples = sampleData.GetECGISamples();
-        ECGIISamples = sampleData.GetECGIISamples();
-        // ECGVSamples = sampleData.GetECGVSamples();
-        // SpO2Samples = sampleData.GetSpO2Samples();
-        CO2Samples = sampleData.GetCO2Samples();
-
-        int MaxIndexECGII = ECGIISamples.Count();
-        int MaxIndexCO2 = CO2Samples.Count();
-
-
-        double XO = 0;
-        double YO = 400;
-        double X = XO;
-        double Y = YO;
-
-        await this.ctx.MoveToAsync(XO, YO);
-
-        float YScaleFactor = 0.2f;
-
-        await this.ctx.BeginBatchAsync();
-
-        await this.ctx.ClearRectAsync(0, 0, HomeScreen.Width, HomeScreen.Height);
-        await this.ctx.SetFillStyleAsync("#000000");
-        await this.ctx.FillRectAsync(0, 0, HomeScreen.Width, HomeScreen.Height);
-
-        await this.ctx.SetFillStyleAsync("#FFFFFF");
-
-        await this.ctx.SetFontAsync("16px consolas");
-        await this.ctx.FillTextAsync($"FPS: {fps:0.000}", 10, 50);
-        await this.ctx.FillTextAsync($"SecondsPerFrame: {SecondsPerFrame:0.000}", 10, 70);
-        await this.ctx.FillTextAsync($"SecondsPerSample: {SecondsPerSample:0.000}", 10, 90);
-        await this.ctx.FillTextAsync($"SamplesPerFrame: {SamplesPerFrame:0.000}", 10, 110);
-        await this.ctx.FillTextAsync($"IntSamplesPerFrame: {IntSamplesPerFrame:0}", 10, 130);
-
-        await this.ctx.BeginPathAsync();
-        await this.ctx.SetStrokeStyleAsync("#00FF00");
-        await this.ctx.SetLineWidthAsync(2);
-
-        int ECGIISamplesIndex = StartingSampleIndex;
-
-        for (int i = 0; i < HomeScreen.Width; i++)
-        {
-
-            //for (int s = 0; s < SamplesToAddPerScreenUpdate; s++) {
-
-                Y = YO - ECGIISamples[ECGIISamplesIndex] * YScaleFactor;
-
-                await this.ctx.LineToAsync(X, Y);
-
-                X += 1;
-                ECGIISamplesIndex += 1;
-            if (ECGIISamplesIndex >= MaxIndexECGII)
-                {
-                    ECGIISamplesIndex = 0;
-                }
-
-            //}
-
-        }
-
-        StartingSampleIndex = (StartingSampleIndex + 1) % MaxIndexECGII;
-        //StartingSampleIndex = (StartingSampleIndex + IntSamplesPerFrame) % MaxIndex;
-        //StartingSampleIndex = (StartingSampleIndex + ((int)SamplesPerFrame)) % MaxIndex;
-        //StartingSampleIndex = (int)(SamplesPerFrame) % MaxIndex ;
-        // if (StartingSampleIndex >= MaxIndex)
-        // {
-        //     StartingSampleIndex = 0;
-        // }
-
-        await this.ctx.StrokeAsync();
-
-        await this.ctx.EndBatchAsync();
-
-    }
+    //     int MaxIndexECGII = ECGIISamples.Count();
+    //     int MaxIndexCO2 = CO2Samples.Count();
 
 
-//     public double[] ECGIISamples = new double[] {
-//    -34,
-//    -34,
-//    -40,
-//    -50,
-//    -60,
-//    -68,
-//    -54,
-//     -2,
-//     84,
-//    184,
-//    288,
-//    360,
-//    352,
-//    272,
-//    172,
-//    172,
-//     74,
-//    -16,
-//    -68,
-//    -84,
-//    -74,
-//    -64,
-//    -52,
-//    -42,
-//    -44,
-//    -46,
-//    -44,
-//    -42,
-//    -44,
-//    -44,
-//    -44,
-//    -42,
-//    -42,
-//    -44,
-//    -42,
-//    -40,
-//    -40,
-//    -42,
-//    -42,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -38,
-//    -40,
-//    -40,
-//    -38,
-//    -38,
-//    -40,
-//    -38,
-//    -38,
-//    -38,
-//    -36,
-//    -36,
-//    -32,
-//    -26,
-//    -18,
-//     -8,
-//      4,
-//     16,
-//     22,
-//     28,
-//     34,
-//     44,
-//     54,
-//     62,
-//     66,
-//     74,
-//     80,
-//     82,
-//     82,
-//     80,
-//     80,
-//     80,
-//     82,
-//     80,
-//     76,
-//     74,
-//     70,
-//     64,
-//     58,
-//     46,
-//     34,
-//     24,
-//     14,
-//      4,
-//    -10,
-//    -24,
-//    -34,
-//    -42,
-//    -48,
-//    -52,
-//    -50,
-//    -50,
-//    -52,
-//    -50,
-//    -48,
-//    -48,
-//    -50,
-//    -50,
-//    -48,
-//    -48,
-//    -48,
-//    -48,
-//    -48,
-//    -48,
-//    -46,
-//    -48,
-//    -46,
-//    -44,
-//    -44,
-//    -46,
-//    -44,
-//    -44,
-//    -42,
-//    -44,
-//    -44,
-//    -44,
-//    -42,
-//    -44,
-//    -42,
-//    -42,
-//    -40,
-//    -42,
-//    -42,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -38,
-//    -38,
-//    -40,
-//    -38,
-//    -38,
-//    -40,
-//    -38,
-//    -38,
-//    -38,
-//    -38,
-//    -36,
-//    -38,
-//    -36,
-//    -38,
-//    -36,
-//    -34,
-//    -36,
-//    -36,
-//    -36,
-//    -32,
-//    -28,
-//    -18,
-//     -6,
-//      6,
-//     16,
-//     26,
-//     30,
-//     28,
-//     32,
-//     26,
-//     22,
-//     14,
-//      4,
-//    -10,
-//    -22,
-//    -32,
-//    -34,
-//    -38,
-//    -38,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -32,
-//    -34,
-//    -30,
-//    -34,
-//    -36,
-//    -44,
-//    -52,
-//    -64,
-//    -66,
-//    -40,
-//     34,
-//    124,
-//    232,
-//    328,
-//    366,
-//    320,
-//    230,
-//    130,
-//    130,
-//     32,
-//    -42,
-//    -78,
-//    -82,
-//    -72,
-//    -58,
-//    -46,
-//    -42,
-//    -44,
-//    -44,
-//    -44,
-//    -42,
-//    -44,
-//    -44,
-//    -44,
-//    -42,
-//    -42,
-//    -42,
-//    -42,
-//    -40,
-//    -42,
-//    -42,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -38,
-//    -38,
-//    -40,
-//    -40,
-//    -38,
-//    -36,
-//    -38,
-//    -38,
-//    -36,
-//    -36,
-//    -36,
-//    -34,
-//    -32,
-//    -22,
-//    -16,
-//     -4,
-//      8,
-//     18,
-//     24,
-//     30,
-//     40,
-//     48,
-//     56,
-//     66,
-//     70,
-//     76,
-//     82,
-//     82,
-//     80,
-//     80,
-//     82,
-//     82,
-//     82,
-//     80,
-//     76,
-//     72,
-//     68,
-//     62,
-//     52,
-//     42,
-//     30,
-//     20,
-//     10,
-//     -4,
-//    -14,
-//    -26,
-//    -38,
-//    -46,
-//    -50,
-//    -50,
-//    -50,
-//    -50,
-//    -50,
-//    -50,
-//    -48,
-//    -48,
-//    -50,
-//    -50,
-//    -46,
-//    -46,
-//    -48,
-//    -48,
-//    -48,
-//    -46,
-//    -46,
-//    -48,
-//    -46,
-//    -46,
-//    -46,
-//    -46,
-//    -44,
-//    -44,
-//    -44,
-//    -44,
-//    -44,
-//    -42,
-//    -42,
-//    -42,
-//    -44,
-//    -40,
-//    -42,
-//    -42,
-//    -42,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -38,
-//    -38,
-//    -40,
-//    -38,
-//    -38,
-//    -38,
-//    -38,
-//    -36,
-//    -38,
-//    -38,
-//    -38,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -34,
-//    -36,
-//    -34,
-//    -30,
-//    -26,
-//    -14,
-//     -2,
-//     10,
-//     18,
-//     28,
-//     28,
-//     30,
-//     32,
-//     28,
-//     24,
-//     20,
-//     10,
-//     -2,
-//    -14,
-//    -26,
-//    -34,
-//    -36,
-//    -38,
-//    -38,
-//    -38,
-//    -36,
-//    -38,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -34,
-//    -34,
-//    -34,
-//    -36,
-//    -34,
-//    -34,
-//    -34,
-//    -32,
-//    -34,
-//    -40,
-//    -48,
-//    -58,
-//    -66,
-//    -58,
-//    -10,
-//     68,
-//    172,
-//    276,
-//    354,
-//    356,
-//    286,
-//    186,
-//     86,
-//     -2,
-//    -64,
-//    -84,
-//    -78,
-//    -64,
-//    -54,
-//    -44,
-//    -42,
-//    -44,
-//    -46,
-//    -44,
-//    -42,
-//    -44,
-//    -46,
-//    -42,
-//    -42,
-//    -44,
-//    -42,
-//    -40,
-//    -42,
-//    -42,
-//    -40,
-//    -38,
-//    -40,
-//    -40,
-//    -38,
-//    -38,
-//    -38,
-//    -40,
-//    -40,
-//    -38,
-//    -36,
-//    -38,
-//    -36,
-//    -36,
-//    -36,
-//    -34,
-//    -32,
-//    -28,
-//    -20,
-//    -12,
-//      0,
-//     14,
-//     22,
-//     26,
-//     34,
-//     44,
-//     52,
-//     60,
-//     66,
-//     74,
-//     80,
-//     82,
-//     82,
-//     80,
-//     80,
-//     80,
-//     82,
-//     82,
-//     78,
-//     74,
-//     70,
-//     66,
-//     58,
-//     48,
-//     38,
-//     26,
-//     16,
-//      4,
-//     -8,
-//    -20,
-//    -32,
-//    -40,
-//    -48,
-//    -50,
-//    -52,
-//    -50,
-//    -50,
-//    -50,
-//    -50,
-//    -48,
-//    -50,
-//    -50,
-//    -48,
-//    -48,
-//    -48,
-//    -48,
-//    -46,
-//    -46,
-//    -46,
-//    -46,
-//    -44,
-//    -46,
-//    -44,
-//    -48,
-//    -46,
-//    -44,
-//    -44,
-//    -44,
-//    -44,
-//    -42,
-//    -42,
-//    -42,
-//    -44,
-//    -42,
-//    -40,
-//    -42,
-//    -42,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -38,
-//    -40,
-//    -40,
-//    -38,
-//    -40,
-//    -40,
-//    -36,
-//    -36,
-//    -38,
-//    -38,
-//    -36,
-//    -34,
-//    -36,
-//    -36,
-//    -36,
-//    -34,
-//    -36,
-//    -36,
-//    -32,
-//    -30,
-//    -20,
-//    -10,
-//      4,
-//     16,
-//     24,
-//     28,
-//     28,
-//     30,
-//     32,
-//     30,
-//     22,
-//     16,
-//      6,
-//     -8,
-//    -20,
-//    -30,
-//    -34,
-//    -36,
-//    -38,
-//    -38,
-//    -36,
-//    -38,
-//    -38,
-//    -36,
-//    -36,
-//    -36,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -32,
-//    -34,
-//    -44,
-//    -50,
-//    -62,
-//    -66,
-//    -46,
-//     20,
-//    112,
-//    214,
-//    316,
-//    366,
-//    334,
-//    242,
-//    146,
-//     46,
-//     46,
-//    -34,
-//    -76,
-//    -82,
-//    -72,
-//    -62,
-//    -48,
-//    -42,
-//    -42,
-//    -46,
-//    -44,
-//    -44,
-//    -44,
-//    -44,
-//    -42,
-//    -42,
-//    -42,
-//    -44,
-//    -42,
-//    -42,
-//    -42,
-//    -42,
-//    -42,
-//    -40,
-//    -38,
-//    -40,
-//    -40,
-//    -38,
-//    -40,
-//    -38,
-//    -38,
-//    -38,
-//    -38,
-//    -38,
-//    -38,
-//    -36,
-//    -38,
-//    -38,
-//    -34,
-//    -32,
-//    -24,
-//    -16,
-//     -6,
-//      6,
-//     18,
-//     24,
-//     30,
-//     38,
-//     48,
-//     54,
-//     62,
-//     70,
-//     76,
-//     82,
-//     82,
-//     82,
-//     80,
-//     80,
-//     82,
-//     82,
-//     80,
-//     76,
-//     72,
-//     68,
-//     62,
-//     54,
-//     44,
-//     34,
-//     22,
-//     12,
-//      0,
-//    -12,
-//    -26,
-//    -34,
-//    -42,
-//    -50,
-//    -50,
-//    -50,
-//    -50,
-//    -50,
-//    -50,
-//    -48,
-//    -48,
-//    -50,
-//    -46,
-//    -46,
-//    -48,
-//    -48,
-//    -46,
-//    -46,
-//    -46,
-//    -46,
-//    -46,
-//    -44,
-//    -44,
-//    -46,
-//    -44,
-//    -44,
-//    -44,
-//    -44,
-//    -42,
-//    -42,
-//    -42,
-//    -42,
-//    -42,
-//    -42,
-//    -40,
-//    -40,
-//    -42,
-//    -38,
-//    -40,
-//    -42,
-//    -40,
-//    -38,
-//    -40,
-//    -40,
-//    -40,
-//    -38,
-//    -38,
-//    -38,
-//    -40,
-//    -40,
-//    -38,
-//    -38,
-//    -38,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -34,
-//    -36,
-//    -36,
-//    -36,
-//    -32,
-//    -26,
-//    -16,
-//     -4,
-//     10,
-//     18,
-//     26,
-//     28,
-//     30,
-//     32,
-//     30,
-//     24,
-//     20,
-//     12,
-//     -2,
-//    -14,
-//    -24,
-//    -34,
-//    -36,
-//    -36,
-//    -38,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -34,
-//    -36,
-//    -36,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -40,
-//    -48,
-//    -56,
-//    -66,
-//    -64,
-//    -18,
-//     56,
-//    154,
-//    264,
-//    346,
-//    360,
-//    300,
-//    202,
-//    100,
-//    100,
-//     10,
-//    -56,
-//    -84,
-//    -78,
-//    -66,
-//    -56,
-//    -44,
-//    -42,
-//    -44,
-//    -44,
-//    -44,
-//    -42,
-//    -44,
-//    -44,
-//    -42,
-//    -40,
-//    -42,
-//    -44,
-//    -42,
-//    -40,
-//    -42,
-//    -42,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -38,
-//    -38,
-//    -40,
-//    -40,
-//    -38,
-//    -38,
-//    -38,
-//    -38,
-//    -38,
-//    -36,
-//    -36,
-//    -36,
-//    -34,
-//    -28,
-//    -20,
-//    -12,
-//      0,
-//     10,
-//     20,
-//     28,
-//     34,
-//     42,
-//     50,
-//     58,
-//     66,
-//     74,
-//     80,
-//     82,
-//     82,
-//     82,
-//     80,
-//     82,
-//     82,
-//     80,
-//     78,
-//     76,
-//     70,
-//     66,
-//     60,
-//     50,
-//     38,
-//     28,
-//     16,
-//      6,
-//     -6,
-//    -18,
-//    -30,
-//    -40,
-//    -46,
-//    -52,
-//    -50,
-//    -50,
-//    -50,
-//    -50,
-//    -50,
-//    -50,
-//    -50,
-//    -48,
-//    -48,
-//    -48,
-//    -46,
-//    -48,
-//    -48,
-//    -46,
-//    -48,
-//    -46,
-//    -44,
-//    -44,
-//    -44,
-//    -44,
-//    -46,
-//    -44,
-//    -44,
-//    -44,
-//    -44,
-//    -42,
-//    -42,
-//    -44,
-//    -44,
-//    -42,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -42,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -38,
-//    -38,
-//    -38,
-//    -38,
-//    -38,
-//    -36,
-//    -36,
-//    -38,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -34,
-//    -34,
-//    -36,
-//    -36,
-//    -30,
-//    -24,
-//    -10,
-//      2,
-//     14,
-//     24,
-//     28,
-//     30,
-//     32,
-//     30,
-//     24,
-//     18,
-//      8,
-//     -6,
-//    -20,
-//    -28,
-//    -34,
-//    -38,
-//    -38,
-//    -36,
-//    -36,
-//    -36,
-//    -38,
-//    -36,
-//    -34,
-//    -36,
-//    -36,
-//    -34,
-//    -34,
-//    -34,
-//    -36,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -36,
-//    -44,
-//    -52,
-//    -60,
-//    -66,
-//    -50,
-//     10,
-//    100,
-//    200,
-//    302,
-//    364,
-//    344,
-//    258,
-//    160,
-//     60,
-//    -22,
-//    -74,
-//    -84,
-//    -74,
-//    -62,
-//    -48,
-//    -40,
-//    -42,
-//    -46,
-//    -44,
-//    -44,
-//    -44,
-//    -44,
-//    -44,
-//    -42,
-//    -40,
-//    -42,
-//    -42,
-//    -40,
-//    -42,
-//    -42,
-//    -42,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -38,
-//    -40,
-//    -40,
-//    -38,
-//    -36,
-//    -38,
-//    -38,
-//    -38,
-//    -38,
-//    -36,
-//    -36,
-//    -34,
-//    -26,
-//    -18,
-//     -8,
-//      4,
-//     16,
-//     22,
-//     28,
-//     36,
-//     46,
-//     56,
-//     62,
-//     68,
-//     76,
-//     82,
-//     82,
-//     82,
-//     80,
-//     80,
-//     82,
-//     82,
-//     80,
-//     76,
-//     74,
-//     70,
-//     66,
-//     56,
-//     44,
-//     34,
-//     24,
-//     14,
-//      0,
-//    -12,
-//    -24,
-//    -34,
-//    -44,
-//    -50,
-//    -52,
-//    -50,
-//    -52,
-//    -50,
-//    -50,
-//    -50,
-//    -50,
-//    -50,
-//    -48,
-//    -48,
-//    -48,
-//    -48,
-//    -46,
-//    -48,
-//    -46,
-//    -48,
-//    -48,
-//    -44,
-//    -44,
-//    -44,
-//    -44,
-//    -44,
-//    -44,
-//    -44,
-//    -44,
-//    -44,
-//    -42,
-//    -42,
-//    -44,
-//    -42,
-//    -42,
-//    -42,
-//    -42,
-//    -42,
-//    -40,
-//    -40,
-//    -40,
-//    -42,
-//    -40,
-//    -40,
-//    -40,
-//    -40,
-//    -38,
-//    -38,
-//    -38,
-//    -40,
-//    -38,
-//    -38,
-//    -38,
-//    -38,
-//    -38,
-//    -36,
-//    -38,
-//    -38,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -32,
-//    -28,
-//    -16,
-//     -6,
-//      6,
-//     18,
-//     24,
-//     28,
-//     30,
-//     32,
-//     30,
-//     26,
-//     20,
-//     14,
-//      2,
-//    -12,
-//    -24,
-//    -32,
-//    -36,
-//    -38,
-//    -36,
-//    -36,
-//    -38,
-//    -36,
-//    -36,
-//    -36,
-//    -36,
-//    -34,
-//    -36,
-//    -34,
-//    -34,
-//    -36,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-//    -34,
-// };
+    //     double XO = 0;
+    //     double YO = 400;
+    //     double X = XO;
+    //     double Y = YO;
+
+    //     await this.ctx.MoveToAsync(XO, YO);
+
+    //     float YScaleFactor = 0.2f;
+
+    //     await this.ctx.BeginBatchAsync();
+
+    //     await this.ctx.ClearRectAsync(0, 0, HomeScreen.Width, HomeScreen.Height);
+    //     await this.ctx.SetFillStyleAsync("#000000");
+    //     await this.ctx.FillRectAsync(0, 0, HomeScreen.Width, HomeScreen.Height);
+
+    //     await this.ctx.SetFillStyleAsync("#FFFFFF");
+
+    //     await this.ctx.SetFontAsync("16px consolas");
+    //     await this.ctx.FillTextAsync($"FPS: {fps:0.000}", 10, 50);
+    //     await this.ctx.FillTextAsync($"SecondsPerFrame: {SecondsPerFrame:0.000}", 10, 70);
+    //     await this.ctx.FillTextAsync($"SecondsPerSample: {SecondsPerSample:0.000}", 10, 90);
+    //     await this.ctx.FillTextAsync($"SamplesPerFrame: {SamplesPerFrame:0.000}", 10, 110);
+    //     await this.ctx.FillTextAsync($"IntSamplesPerFrame: {IntSamplesPerFrame:0}", 10, 130);
+
+    //     await this.ctx.BeginPathAsync();
+    //     await this.ctx.SetStrokeStyleAsync("#00FF00");
+    //     await this.ctx.SetLineWidthAsync(2);
+
+    //     int ECGIISamplesIndex = StartingSampleIndex;
+
+    //     for (int i = 0; i < HomeScreen.Width; i++)
+    //     {
+
+    //         //for (int s = 0; s < SamplesToAddPerScreenUpdate; s++) {
+
+    //             Y = YO - ECGIISamples[ECGIISamplesIndex] * YScaleFactor;
+
+    //             await this.ctx.LineToAsync(X, Y);
+
+    //             X += 1;
+    //             ECGIISamplesIndex += 1;
+    //         if (ECGIISamplesIndex >= MaxIndexECGII)
+    //             {
+    //                 ECGIISamplesIndex = 0;
+    //             }
+
+    //         //}
+
+    //     }
+
+    //     StartingSampleIndex = (StartingSampleIndex + 1) % MaxIndexECGII;
+    //     //StartingSampleIndex = (StartingSampleIndex + IntSamplesPerFrame) % MaxIndex;
+    //     //StartingSampleIndex = (StartingSampleIndex + ((int)SamplesPerFrame)) % MaxIndex;
+    //     //StartingSampleIndex = (int)(SamplesPerFrame) % MaxIndex ;
+    //     // if (StartingSampleIndex >= MaxIndex)
+    //     // {
+    //     //     StartingSampleIndex = 0;
+    //     // }
+
+    //     await this.ctx.StrokeAsync();
+
+    //     await this.ctx.EndBatchAsync();
+
+    // }
+
 
 }

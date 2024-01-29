@@ -1,45 +1,91 @@
-﻿using System;
+﻿using Blazor.Extensions.Canvas.Canvas2D;
+using Blazor.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BlazorCanvasTest2.Shared.Data;
+
 
 namespace BlazorCanvasTest2.Models
 {
     public class Waveform
     {
+        Enums.Z_WAVEFORM_ID WaveformID;
         public double Top { get; private set; }
+        public double Bottom { get; private set; }
         public double Left { get; private set; }
+        public double Right { get; private set; }
         public double Width { get; private set; }
         public double Height { get; private set; }
         public string Color { get; private set; }
 
-        public double EraseX { get; set; }
         public double DrawX { get; set; }
+        public double EraseX { get; set; }
         public double DrawY { get; set; }
+        public double YOffset { get; set; }
+        public double YScaleFactor { get; set; }
+        public int SampleIndex { get; set; }
+        public int MaxSampleIndex { get; set; }
+        public double[] Samples { get; set; }
 
-        public Waveform(double left, double top, double width, double height, string color)
+
+        public bool AutoScale { get; set; }
+        public double YMin { get; set; }
+        public double YMax { get; set; }
+        public double Range { get; set; }
+
+        BlazorCanvasTest2.Shared.Data.SampleData MySampleData = new SampleData() ;
+
+        public Waveform(Enums.Z_WAVEFORM_ID WaveformId, double left, double top, double width, double height, string color, double drawX, double eraseX, double drawY, bool autoScale, double yMin, double yMax, double yScaleFactor, int sampleIndex)
         {
-            (Left, Top, Width, Height, Color) = (left, top, width, height, color);
+            (WaveformID, Left, Top, Width, Height, Color, DrawX, EraseX, DrawY, AutoScale, YMin, YMax, YScaleFactor, SampleIndex) = (WaveformId, left, top, width, height, color, drawX, eraseX, drawY, autoScale, yMin, yMax, yScaleFactor, sampleIndex);
+
+            Bottom = Top + Height ;
+
+            Right = Left + Width ;
+
+            YOffset = Top + Height / 2 ;
+
+            AddSampleData(WaveformID) ;
+
+            if (AutoScale) { 
+                YMin = double.MaxValue;
+                YMax = double.MinValue;
+
+                for (int s = 0; s < Samples.Length; s++) {
+                   if (Samples[s] < YMin) { YMin = Samples[s]; }
+                   if (Samples[s] > YMax) { YMax = Samples[s]; }
+                }
+
+                Range = YMax - YMin;
+
+                YMax += Range * 3.0;
+                //YMin -= Range * 1.0;
+            }
+
+            Range = YMax - YMin;
+
         }
 
-        //public void StepForward(double width, double height)
-        //{
-        //    X += XVel;
-        //    Y += YVel;
-        //    if (X < 0 || X > width)
-        //        XVel *= -1;
-        //    if (Y < 0 || Y > height)
-        //        YVel *= -1;
+        public void AddSampleData(Enums.Z_WAVEFORM_ID WaveformId)
+        {
+            switch (WaveformId)
+            {
+                case Enums.Z_WAVEFORM_ID.Z_WAVEFORM_ECGII:
+                    Samples = MySampleData.GetECGIISamples();
+                    break;
+                case Enums.Z_WAVEFORM_ID.Z_WAVEFORM_CO2:
+                    Samples = MySampleData.GetCO2Samples();
+                    break;
+                default:
+                    Samples = MySampleData.GetECGIISamples();
+                    break;
+            }
 
-        //    if (X < 0)
-        //        X += 0 - X;
-        //    else if (X > width)
-        //        X -= X - width;
+            MaxSampleIndex = Samples.Count();
+        }
 
-        //    if (Y < 0)
-        //        Y += 0 - Y;
-        //    if (Y > height)
-        //        Y -= Y - height;
-        //}
     }
+
 }

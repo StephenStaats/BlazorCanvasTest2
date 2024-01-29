@@ -25,7 +25,7 @@
 
 
         // The sender should send 250 samples per second
-        public  double[] ECGISamples = new double[] {
+        public double[] ECGISamples = new double[] {
    -28,
    -24,
    -26,
@@ -1154,7 +1154,7 @@
    -26,
 };
 
-        public  double[] ECGIISamples = new double[] {
+        public double[] ECGIISamples = new double[] {
    -34,
    -34,
    -40,
@@ -2283,7 +2283,7 @@
    -34,
 };
 
-        public  double[] ECGVSamples = new double[] {
+        public double[] ECGVSamples = new double[] {
        -4,
     -6,
     -8,
@@ -3413,7 +3413,7 @@
 };
 
         // CO2 samples should be 50Hz
-        public  double[] CO2Samples = new double[] {
+        public double[] CO2Samples = new double[] {
     2        ,
     94       ,
     182      ,

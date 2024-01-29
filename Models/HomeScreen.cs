@@ -13,6 +13,8 @@ namespace BlazorCanvasTest2.Models
         // #define SCREEN_W                        1366   // DSW10 display X resolution
         // #define SCREEN_H                         768   // DSW10 display Y resolution
 
+        //Enums.Z_WAVEFORM_ID[] WaveformIDs ;
+
         public double Width { get; private set; }
         public double Height { get; private set; }
 
@@ -54,22 +56,51 @@ namespace BlazorCanvasTest2.Models
         public void Resize(double width, double height) =>
             (Width, Height) = (width, height);
 
-        public void AddWaveforms(int count = 4)
-        {
-            double WaveformHeight = WaveformAreaHeight / count ;
+        //public void AddWaveforms(Enums.Z_WAVEFORM_ID[] WaveformSet)
+        //{
+        //    double WaveformHeight = WaveformAreaHeight / WaveformSet.Count();
 
-            for (int i = 0; i < count; i++)
-            {
-                Waveforms.Add(
-                    new Waveform(
-                        left: WaveformAreaLeft,
-                        top: WaveformAreaTop + i * WaveformHeight,
-                        width: WaveformAreaWidth,
-                        height: WaveformAreaHeight,
-                        color: "#00FF00"
-                    )
-                );
-            }
+        //    for (int w = 0; w < WaveformSet.Count(); w++)
+        //    {
+        //        Waveforms.Add(
+        //            new Waveform(
+        //                WaveformId: WaveformSet[w],
+        //                left: WaveformAreaLeft,
+        //                top: WaveformAreaTop + w * WaveformHeight,
+        //                width: WaveformAreaWidth,
+        //                height: WaveformAreaHeight,
+        //                color: "#00FF00"
+        //            )
+        //        );
+        //    }
+        //}
+
+        public void ClearWaveformList()
+        {
+            Waveforms.Clear() ;
+        }
+
+        public void AddWaveform(Enums.Z_WAVEFORM_ID WaveformId, double WaveformAreaLeft, double WaveformAreaTop, double WaveformAreaWidth, double WaveformAreaHeight, string WaveformColor, double DrawX, double EraseX, double DrawY, bool AutoScale, double YMin, double YMax, double YScaleFactor, int SampleIndex)
+        {
+            Waveforms.Add(
+                new Waveform(
+                    WaveformId: WaveformId,
+                    left: WaveformAreaLeft,
+                    top: WaveformAreaTop,
+                    width: WaveformAreaWidth,
+                    height: WaveformAreaHeight,
+                    color: WaveformColor,
+                    drawX: DrawX,
+                    eraseX: EraseX,
+                    drawY: DrawY,
+                    autoScale: AutoScale,
+                    yMin: YMin,
+                    yMax: YMax,
+                    yScaleFactor: YScaleFactor,
+                    sampleIndex: SampleIndex
+                )
+            );
+            
         }
     }
 }

@@ -22,6 +22,7 @@ namespace BlazorCanvasTest2.Models
 
         public double DrawX { get; set; }
         public double EraseX { get; set; }
+        public double SweepSpeed { get; set; }
         public double DrawY { get; set; }
         public double YOffset { get; set; }
         public double YScaleFactor { get; set; }
@@ -31,15 +32,16 @@ namespace BlazorCanvasTest2.Models
 
 
         public bool AutoScale { get; set; }
+        public bool Fill { get; set; }
         public double YMin { get; set; }
         public double YMax { get; set; }
         public double Range { get; set; }
 
         BlazorCanvasTest2.Shared.Data.SampleData MySampleData = new SampleData() ;
 
-        public Waveform(Enums.Z_WAVEFORM_ID WaveformId, double left, double top, double width, double height, string color, double drawX, double eraseX, double drawY, bool autoScale, double yMin, double yMax, double yScaleFactor, int sampleIndex)
+        public Waveform(Enums.Z_WAVEFORM_ID WaveformId, double left, double top, double width, double height, string color, bool fill, double drawX, double eraseX, double sweepSpeed, double drawY, bool autoScale, double yMin, double yMax, double yScaleFactor, int sampleIndex)
         {
-            (WaveformID, Left, Top, Width, Height, Color, DrawX, EraseX, DrawY, AutoScale, YMin, YMax, YScaleFactor, SampleIndex) = (WaveformId, left, top, width, height, color, drawX, eraseX, drawY, autoScale, yMin, yMax, yScaleFactor, sampleIndex);
+            (WaveformID, Left, Top, Width, Height, Color, Fill, DrawX, EraseX, SweepSpeed, DrawY, AutoScale, YMin, YMax, YScaleFactor, SampleIndex) = (WaveformId, left, top, width, height, color, fill, drawX, eraseX, sweepSpeed, drawY, autoScale, yMin, yMax, yScaleFactor, sampleIndex);
 
             Bottom = Top + Height ;
 
@@ -50,6 +52,7 @@ namespace BlazorCanvasTest2.Models
             AddSampleData(WaveformID) ;
 
             if (AutoScale) { 
+
                 YMin = double.MaxValue;
                 YMax = double.MinValue;
 

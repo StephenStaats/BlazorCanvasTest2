@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -80,7 +81,7 @@ namespace BlazorCanvasTest2.Models
             Waveforms.Clear() ;
         }
 
-        public void AddWaveform(Enums.Z_WAVEFORM_ID WaveformId, double WaveformAreaLeft, double WaveformAreaTop, double WaveformAreaWidth, double WaveformAreaHeight, string WaveformColor, double DrawX, double EraseX, double DrawY, bool AutoScale, double YMin, double YMax, double YScaleFactor, int SampleIndex)
+        public void AddWaveform(Enums.Z_WAVEFORM_ID WaveformId, double WaveformAreaLeft, double WaveformAreaTop, double WaveformAreaWidth, double WaveformAreaHeight, string WaveformColor, bool Fill, double DrawX, double EraseX, double SweepSpeed, double DrawY, bool AutoScale, double YMin, double YMax, double YScaleFactor, int SampleIndex)
         {
             Waveforms.Add(
                 new Waveform(
@@ -90,8 +91,10 @@ namespace BlazorCanvasTest2.Models
                     width: WaveformAreaWidth,
                     height: WaveformAreaHeight,
                     color: WaveformColor,
+                    fill: Fill,
                     drawX: DrawX,
                     eraseX: EraseX,
+                    sweepSpeed: SweepSpeed,
                     drawY: DrawY,
                     autoScale: AutoScale,
                     yMin: YMin,

@@ -4,8 +4,10 @@
 @using Blazor.Extensions.Canvas.Canvas2D
 @inject IJSRuntime JsRuntime;
 
+@* <label>Some text</label> *@
+
 <div id="canvasHolder" style="position: fixed; background-color: blue; width: 100%; height: 100%">
-    <BECanvas Width="600" Height="400" @ref="_canvasReference"></BECanvas>
+    <BECanvas Width="1500" Height="1000" @ref="_canvasReference"></BECanvas>
 </div>
 
 @code{
@@ -25,11 +27,12 @@
     [JSInvokable]
     public void ResizeInBlazor(double width, double height)
     {
-        //HomeScreen.Resize(width, height);
-        // #define SCREEN_W                        1366   // DSW10 display X resolution
-        // #define SCREEN_H                         768   // DSW10 display Y resolution
-        HomeScreen.Resize(1366, 768);
-        RedrawHomeScreen = 1;
+    //HomeScreen.Resize(width, height);
+    // #define SCREEN_W                        1366   // DSW10 display X resolution
+    // #define SCREEN_H                         768   // DSW10 display Y resolution
+    HomeScreen.Resize(1366, 768);
+    //HomeScreen.Resize(800, 480);
+    RedrawHomeScreen = 1;
     }
 
 
@@ -45,6 +48,10 @@
     private double DrawY = 300;
     private double YScaleFactor;
     private int SampleIndex;
+    private int NWaveforms = 2;
+
+    private string ECGColor = "#00FF00";
+    private string CO2Color = "#FFFF00";
 
     [JSInvokable]
     public async ValueTask RenderInBlazor(float timeStamp)
@@ -71,6 +78,7 @@
 
         double SamplesPerFrame = SecondsPerFrame / SecondsPerSample;
         int IntSamplesPerFrame = (int)SamplesPerFrame;
+        int ThisWaveformSamplesPerFrame ;
 
         // 
         //   Define home screen areas
@@ -115,8 +123,8 @@
         //   If initializing, redraw the home screen 
         //
 
-        Enums.Z_WAVEFORM_ID[] WaveformSet = { Enums.Z_WAVEFORM_ID.Z_WAVEFORM_ECGII, Enums.Z_WAVEFORM_ID.Z_WAVEFORM_CO2 };
-        string[] WaveformColors = { "#00FF00", "#FFFF00" };
+        // Enums.Z_WAVEFORM_ID[] WaveformSet = { Enums.Z_WAVEFORM_ID.Z_WAVEFORM_ECGII, Enums.Z_WAVEFORM_ID.Z_WAVEFORM_CO2 };
+        // string[] WaveformColors = { "#00FF00", "#FFFF00" };
 
         if (RedrawHomeScreen == 1)
         {
@@ -152,31 +160,72 @@
             YScaleFactor = 0.15;
             SampleIndex = 0;
 
-            double WaveformHeight = HomeScreen.WaveformAreaHeight / WaveformSet.Count();
+            //double WaveformHeight = HomeScreen.WaveformAreaHeight / WaveformSet.Count();
+            double WaveformHeight = HomeScreen.WaveformAreaHeight / NWaveforms;
 
-            for (int w = 0; w < WaveformSet.Count(); w++)
-            {
-                DrawY = HomeScreen.WaveformAreaTop + w * WaveformHeight + WaveformHeight / 2;
+            // for (int w = 0; w < WaveformSet.Count(); w++)
+            // {
+            //     DrawY = HomeScreen.WaveformAreaTop + w * WaveformHeight + WaveformHeight / 2;
 
-                bool AutoScale = true;
+            //     bool AutoScale = true;
 
-                HomeScreen.AddWaveform(WaveformSet[w], 
-                                       HomeScreen.WaveformAreaLeft, 
-                                       HomeScreen.WaveformAreaTop + w * WaveformHeight, 
-                                       HomeScreen.WaveformAreaWidth, 
-                                       WaveformHeight, 
-                                       WaveformColors[w],
-                                       DrawX, 
-                                       EraseX,
-                                       DrawY,
-                                       AutoScale,
-                                       0,
-                                       0,
-                                       YScaleFactor,
-                                       SampleIndex
-                );
+            //     HomeScreen.AddWaveform(WaveformSet[w], 
+            //                            HomeScreen.WaveformAreaLeft, 
+            //                            HomeScreen.WaveformAreaTop + w * WaveformHeight, 
+            //                            HomeScreen.WaveformAreaWidth, 
+            //                            WaveformHeight, 
+            //                            WaveformColors[w],
+            //                            DrawX, 
+            //                            EraseX,
+            //                            DrawY,
+            //                            AutoScale,
+            //                            0,
+            //                            0,
+            //                            YScaleFactor,
+            //                            SampleIndex
+            //     );
 
-            }
+            // }
+
+            int w = 0 ;
+
+            HomeScreen.AddWaveform(Enums.Z_WAVEFORM_ID.Z_WAVEFORM_ECGII, 
+                                    HomeScreen.WaveformAreaLeft, 
+                                    HomeScreen.WaveformAreaTop + w * WaveformHeight, 
+                                    HomeScreen.WaveformAreaWidth, 
+                                    WaveformHeight, 
+                                    ECGColor,
+                                    false,
+                                    DrawX, 
+                                    EraseX,
+                                    25.0,
+                                    DrawY,
+                                    false,
+                                    -1000,
+                                    1000,
+                                    YScaleFactor,
+                                    SampleIndex
+            ) ;
+            w++ ;
+
+            HomeScreen.AddWaveform(Enums.Z_WAVEFORM_ID.Z_WAVEFORM_CO2, 
+                                    HomeScreen.WaveformAreaLeft, 
+                                    HomeScreen.WaveformAreaTop + w * WaveformHeight, 
+                                    HomeScreen.WaveformAreaWidth, 
+                                    WaveformHeight, 
+                                    CO2Color,
+                                    true,
+                                    DrawX, 
+                                    EraseX,
+                                    6.25,
+                                    DrawY,
+                                    true,
+                                    0,
+                                    0,
+                                    YScaleFactor,
+                                    SampleIndex
+            ) ;
+            w++ ;
 
             await this.ctx.EndBatchAsync();
 
@@ -245,9 +294,16 @@
             await this.ctx.SetStrokeStyleAsync("#000000");
             await this.ctx.SetFillStyleAsync("#000000");
 
-            for (int w = 0; w < WaveformSet.Count(); w++) {
+            for (int w = 0; w < NWaveforms; w++) {
 
-                for (int i = 0; i < IntSamplesPerFrame; i++)
+                if (HomeScreen.Waveforms[w].SweepSpeed == 25.0) {
+                    ThisWaveformSamplesPerFrame = IntSamplesPerFrame ;
+                }
+                else {
+                    ThisWaveformSamplesPerFrame = IntSamplesPerFrame / 4;
+                }
+
+                for (int i = 0; i < ThisWaveformSamplesPerFrame; i++)
                 {
                     await this.ctx.MoveToAsync(HomeScreen.Waveforms[w].EraseX, HomeScreen.Waveforms[w].Top);
                     await this.ctx.LineToAsync(HomeScreen.Waveforms[w].EraseX, HomeScreen.Waveforms[w].Bottom);
@@ -269,7 +325,7 @@
             //   Fill in newest waveform samples
             //
 
-            for (int w = 0; w < WaveformSet.Count(); w++) {
+            for (int w = 0; w < NWaveforms; w++) {
 
                 await this.ctx.BeginBatchAsync();
 
@@ -287,7 +343,14 @@
 
                 await this.ctx.MoveToAsync(HomeScreen.Waveforms[w].DrawX, HomeScreen.Waveforms[w].DrawY);
 
-                for (int i = 0; i < IntSamplesPerFrame; i++)
+                if (HomeScreen.Waveforms[w].SweepSpeed == 25.0) {
+                    ThisWaveformSamplesPerFrame = IntSamplesPerFrame ;
+                }
+                else {
+                    ThisWaveformSamplesPerFrame = IntSamplesPerFrame / 4;
+                }
+
+                for (int i = 0; i < ThisWaveformSamplesPerFrame; i++)
                 {
 
                     HomeScreen.Waveforms[w].DrawX += 1;
@@ -301,7 +364,7 @@
                     HomeScreen.Waveforms[w].DrawY = Bottom - (SampleY - SampleMin) / SampleRange * Height;
 
                     await this.ctx.LineToAsync(HomeScreen.Waveforms[w].DrawX, HomeScreen.Waveforms[w].DrawY);
-                    if (w == 1)
+                    if (HomeScreen.Waveforms[w].Fill)
                     {
                         await this.ctx.LineToAsync(HomeScreen.Waveforms[w].DrawX, HomeScreen.Waveforms[w].Bottom);
                         await this.ctx.MoveToAsync(HomeScreen.Waveforms[w].DrawX, HomeScreen.Waveforms[w].DrawY);
